@@ -4,6 +4,7 @@ import {
   emptyMemory, isValidMemory, applySetup, updateEntry, removeEntry,
   addLesson, renderMemory, memorySummary, similarity, pruneMemory,
   applyReview, applyReviews, exportMarkdown, diffMemory, renderDiff,
+  findLessonFix, snapshotId, pruneSnapshots,
 } from "../lib/memory.js";
 
 test("emptyMemory is valid and renders empty", () => {
@@ -112,6 +113,30 @@ test("diffMemory reports preference changes and added lessons (v0.4)", () => {
 test("diffMemory empty when identical", () => {
   const d = applySetup(emptyMemory(), { language: "Go" }).doc;
   assert.equal(diffMemory(d, d).length, 0);
+});
+
+test("findLessonFix returns best-known fix (v0.6)", () => {
+  const { doc } = applyReviews(emptyMemory(), [
+    { error: "build fails due to missing env", fix: "load .env first", evidence: "run 2" },
+  ]);
+  const hit = findLessonFix(doc, "build failed due to missing environment variable");
+  assert.ok(hit);
+  assert.equal(hit.fix, "load .env first");
+  assert.equal(findLessonFix(doc, "completely unrelated topic here"), null);
+});
+
+test("snapshotId and pruneSnapshots (v0.6)", () => {
+  const id = snapshotId(new Date("2026-08-17T12:00:00Z"));
+  assert.ok(/^mem-2026-08-17T12-00-00/.test(id));
+  const snaps = [
+    { id: "a", ts: "2026-08-17T10:00:00Z" },
+    { id: "b", ts: "2026-08-17T11:00:00Z" },
+    { id: "c", ts: "2026-08-17T12:00:00Z" },
+  ];
+  const pruned = pruneSnapshots(snaps, 2);
+  assert.equal(pruned.length, 2);
+  assert.equal(pruned[0].id, "b");
+  assert.equal(pruned[1].id, "c");
 });
 
 test("applyReviews batches incidents with dedupe (v0.5)", () => {
