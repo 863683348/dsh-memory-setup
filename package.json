@@ -1,6 +1,6 @@
 {
   "name": "dsh-memory-setup",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Solve the AI goldfish brain: a personal memory layer for DeepSeek Harness — preferences, project conventions, workflows, and error lessons, stored locally as auditable, evidence-backed Markdown/JSON. 解决 AI 金鱼脑：偏好、项目约定、工作方式与纠错教训的本地可审计记忆层。",
   "type": "module",
   "main": "lib/index.js",
