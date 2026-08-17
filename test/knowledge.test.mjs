@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  emptyKnowledge, isValidKnowledge, kbAdd, kbSearch, kbList, kbRemove, kbHit, kbSummary, renderKB,
+  emptyKnowledge, isValidKnowledge, kbAdd, kbSearch, kbList, kbRemove, kbHit, kbSummary, renderKB, kbSearchBM25,
 } from "../lib/knowledge.js";
 
 test("emptyKnowledge is valid", () => {
@@ -46,4 +46,18 @@ test("kbRemove and kbHit work", () => {
 
 test("kbAdd requires title and content", () => {
   assert.throws(() => kbAdd(emptyKnowledge(), { title: "", content: "x" }), /title and content/);
+});
+
+test("kbSearchBM25 ranks title matches above content-only matches (v0.4)", () => {
+  let k = kbAdd(emptyKnowledge(), { title: "docker deploy guide", content: "build image and push" }).kb;
+  k = kbAdd(k, { title: "random notes", content: "the docker deploy guide explains image push steps" }).kb;
+  const r = kbSearchBM25(k, "docker deploy guide");
+  assert.equal(r.length, 2);
+  assert.equal(r[0].title, "docker deploy guide");
+  assert.ok(r[0].score > r[1].score);
+});
+
+test("kbSearchBM25 empty query returns nothing", () => {
+  const k = kbAdd(emptyKnowledge(), { title: "x", content: "y" }).kb;
+  assert.equal(kbSearchBM25(k, "").length, 0);
 });

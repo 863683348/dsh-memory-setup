@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   emptyMemory, isValidMemory, applySetup, updateEntry, removeEntry,
   addLesson, renderMemory, memorySummary, similarity, pruneMemory,
-  applyReview, exportMarkdown,
+  applyReview, exportMarkdown, diffMemory, renderDiff,
 } from "../lib/memory.js";
 
 test("emptyMemory is valid and renders empty", () => {
@@ -97,4 +97,19 @@ test("exportMarkdown includes changelog and renders", () => {
   assert.ok(md.includes("# Personal memory export"));
   assert.ok(md.includes("## Changelog"));
   assert.ok(md.includes("Go"));
+});
+
+test("diffMemory reports preference changes and added lessons (v0.4)", () => {
+  const prev = applySetup(emptyMemory(), { language: "Go" }).doc;
+  const cur = updateEntry(prev, "preferences.language", "Rust", "switch");
+  const withLesson = addLesson(cur, { error: "ENOENT on build", fix: "run install first" }).doc;
+  const changes = diffMemory(prev, withLesson);
+  assert.ok(changes.some((d) => d.path === "preferences.language" && d.from === "Go" && d.to === "Rust"));
+  assert.ok(changes.some((d) => d.path === "lessons" && d.from === "(added)"));
+  assert.ok(renderDiff(changes).includes("preferences.language: Go → Rust"));
+});
+
+test("diffMemory empty when identical", () => {
+  const d = applySetup(emptyMemory(), { language: "Go" }).doc;
+  assert.equal(diffMemory(d, d).length, 0);
 });
