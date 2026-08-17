@@ -21,6 +21,9 @@ dsh plugin --profile <profile> add dsh-memory-setup
 | `memory_lesson` | Record an error lesson (error → fix → evidence) so the same mistake is not repeated |
 | `memory_review` | v0.2 — formalize an incident into a lesson with root cause; similar lessons are auto-merged (dedupe + hit counter) |
 | `memory_export` | v0.2 — export the full memory + changelog to a Markdown file for review/backup |
+| `knowledge_add` | v0.3 — add a knowledge entry (title/content/tags/source); similar titles auto-merge |
+| `knowledge_search` | v0.3 — keyword retrieval (title ×3 / tags ×2 / content ×1 scoring) |
+| `knowledge_list` / `knowledge_remove` | v0.3 — browse / delete knowledge entries |
 
 ## Storage & auditability
 
@@ -34,13 +37,14 @@ dsh plugin --profile <profile> add dsh-memory-setup
 | Field | Default | Description |
 |---|---|---|
 | memoryDir | .dsh-memory-setup | memory dir relative to the session workspace |
-| injectOnBoot | true | add the memory guidance section to the system prompt |
+| injectOnBoot | true | inject live memory into the system prompt (dynamic context, refreshed on save) |
 | maxMemoryChars | 6000 | cap for rendered memory text |
 
 ## Roadmap
 
 - v0.2 ✅: incident review with dedupe (`memory_review`), lesson/convention expiry + changelog cap (auto-pruned on save), `memory.json.bak` backup on every save, Markdown export (`memory_export`)
-- v0.3: dynamic memory injection per session (pending systemPrompt context() API verification), knowledge-base module
+- v0.3 ✅: personal knowledge base (`knowledge_*`, keyword retrieval, title-merge dedupe); dynamic memory injection via a live `systemPrompt.context()` section — refreshed at boot (from the workspace path) and after every memory save (throttled 30s), with static guidance as fallback
+- v0.4: embeddings-based KB retrieval, memory diff export, lesson auto-detection from failed tool calls (pending event API)
 
 ## Security
 
