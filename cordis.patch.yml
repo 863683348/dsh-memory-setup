@@ -1,0 +1,8 @@
+# dsh-memory-setup — bundle patch layer.
+- insert:
+    - id: dsh-memory-setup
+      name: 'dsh-memory-setup'
+      config:
+        # memoryDir: '.dsh-memory-setup'   # relative to the session workspace
+        # injectOnBoot: true               # add the memory guidance prompt section
+        # maxMemoryChars: 6000             # cap injected/rendered memory size

@@ -1,0 +1,17 @@
+{
+  "name": "dsh-memory-setup",
+  "version": "0.1.0",
+  "description": "Solve the AI goldfish brain: a personal memory layer for DeepSeek Harness — preferences, project conventions, workflows, and error lessons, stored locally as auditable, evidence-backed Markdown/JSON. 解决 AI 金鱼脑：偏好、项目约定、工作方式与纠错教训的本地可审计记忆层。",
+  "type": "module",
+  "main": "lib/index.js",
+  "files": ["lib", "cordis.patch.yml", "README.md", "SECURITY.md"],
+  "license": "MIT",
+  "scripts": { "test": "node test/memory.test.mjs && node test/scanner.test.mjs" },
+  "publishConfig": { "access": "public" },
+  "dsh": { "bundle": { "patch": "./cordis.patch.yml" } },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1",
+    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6",
+    "@deepseek-ai/schemastery": "^3.18.1"
+  }
+}
