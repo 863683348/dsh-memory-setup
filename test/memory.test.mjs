@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   emptyMemory, isValidMemory, applySetup, updateEntry, removeEntry,
-  addLesson, renderMemory, memorySummary,
+  addLesson, renderMemory, memorySummary, similarity, pruneMemory,
+  applyReview, exportMarkdown,
 } from "../lib/memory.js";
 
 test("emptyMemory is valid and renders empty", () => {
@@ -60,4 +61,40 @@ test("renderMemory truncates over maxChars", () => {
   const md = renderMemory(doc, 2000);
   assert.ok(md.length <= 2000 + 20);
   assert.ok(md.includes("truncated"));
+});
+
+// ---- v0.2 ----
+test("similarity: overlapping text scores high, unrelated scores low", () => {
+  assert.ok(similarity("pnpm install failed with ENOENT", "pnpm install failed with ENOENT") > 0.9);
+  assert.ok(similarity("pnpm install failed with ENOENT", "docker build failed") < 0.3);
+});
+
+test("pruneMemory removes expired lessons and caps changelog", () => {
+  let { doc } = applySetup(emptyMemory(), { conventions: ["old"] });
+  doc.lessons.push({ id: "l1", error: "old lesson", fix: "x", expiresAt: "2020-01-01T00:00:00Z" });
+  doc.lessons.push({ id: "l2", error: "fresh lesson", fix: "y", createdAt: new Date().toISOString() });
+  for (let i = 0; i < 120; i++) doc.changelog.push({ ts: new Date().toISOString(), action: "t", path: "-", summary: "s" });
+  const pruned = pruneMemory(doc, { now: Date.now(), changelogCap: 100 });
+  assert.equal(pruned.lessons.length, 1);
+  assert.equal(pruned.lessons[0].id, "l2");
+  assert.equal(pruned.changelog.length, 100);
+});
+
+test("applyReview dedupes similar lessons and bumps hits", () => {
+  const first = applyReview(emptyMemory(), { error: "npm install fails due to lockfile mismatch", fix: "delete lockfile and reinstall" });
+  assert.equal(first.deduped, false);
+  assert.equal(first.hits, 1);
+  const again = applyReview(first.doc, { error: "npm install failed due to lockfile mismatch again", fix: "same fix", evidence: "run 5" });
+  assert.equal(again.deduped, true);
+  assert.equal(again.hits, 2);
+  assert.equal(again.doc.lessons.length, 1);
+  assert.equal(again.entry.evidence, "run 5");
+});
+
+test("exportMarkdown includes changelog and renders", () => {
+  const { doc } = applySetup(emptyMemory(), { language: "Go" });
+  const md = exportMarkdown(doc);
+  assert.ok(md.includes("# Personal memory export"));
+  assert.ok(md.includes("## Changelog"));
+  assert.ok(md.includes("Go"));
 });

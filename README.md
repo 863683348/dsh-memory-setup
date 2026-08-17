@@ -19,6 +19,8 @@ dsh plugin --profile <profile> add dsh-memory-setup
 | `memory_update` | Update one memory path (e.g. `preferences.codeStyle`) with a changelog entry |
 | `memory_project` | Auto-extract project conventions from workspace files (README / package.json / configs), preview or apply |
 | `memory_lesson` | Record an error lesson (error → fix → evidence) so the same mistake is not repeated |
+| `memory_review` | v0.2 — formalize an incident into a lesson with root cause; similar lessons are auto-merged (dedupe + hit counter) |
+| `memory_export` | v0.2 — export the full memory + changelog to a Markdown file for review/backup |
 
 ## Storage & auditability
 
@@ -37,8 +39,8 @@ dsh plugin --profile <profile> add dsh-memory-setup
 
 ## Roadmap
 
-- v0.2: dynamic memory injection per session (context()), lesson auto-detection from failed tool calls, memory rotation/expiry
-- v0.3: knowledge-base module (direction 3), memory diff export
+- v0.2 ✅: incident review with dedupe (`memory_review`), lesson/convention expiry + changelog cap (auto-pruned on save), `memory.json.bak` backup on every save, Markdown export (`memory_export`)
+- v0.3: dynamic memory injection per session (pending systemPrompt context() API verification), knowledge-base module
 
 ## Security
 
