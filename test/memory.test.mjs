@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   emptyMemory, isValidMemory, applySetup, updateEntry, removeEntry,
   addLesson, renderMemory, memorySummary, similarity, pruneMemory,
-  applyReview, exportMarkdown, diffMemory, renderDiff,
+  applyReview, applyReviews, exportMarkdown, diffMemory, renderDiff,
 } from "../lib/memory.js";
 
 test("emptyMemory is valid and renders empty", () => {
@@ -112,4 +112,20 @@ test("diffMemory reports preference changes and added lessons (v0.4)", () => {
 test("diffMemory empty when identical", () => {
   const d = applySetup(emptyMemory(), { language: "Go" }).doc;
   assert.equal(diffMemory(d, d).length, 0);
+});
+
+test("applyReviews batches incidents with dedupe (v0.5)", () => {
+  const base = applyReviews(emptyMemory(), [
+    { error: "build fails due to missing env", fix: "load .env first", evidence: "run 2" },
+    { error: "npm cache corrupted", fix: "clear cache", evidence: "run 4" },
+  ]);
+  assert.equal(base.added, 2);
+  assert.equal(base.merged, 0);
+  const again = applyReviews(base.doc, [
+    { error: "build fails due to missing env again", fix: "load .env first" },
+    { error: "another issue", fix: "fix it" },
+  ]);
+  assert.equal(again.merged, 1);
+  assert.equal(again.added, 1);
+  assert.equal(again.doc.lessons.length, 3);
 });

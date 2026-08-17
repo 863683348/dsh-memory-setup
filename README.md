@@ -25,6 +25,8 @@ dsh plugin --profile <profile> add dsh-memory-setup
 | `knowledge_search` | v0.3 — keyword retrieval (title ×3 / tags ×2 / content ×1 scoring) |
 | `knowledge_list` / `knowledge_remove` | v0.3 — browse / delete knowledge entries |
 | `memory_diff` | v0.4 — diff current memory against `memory.json.bak`, optionally written to `memory-diff.md` |
+| `memory_review_session` | v0.5 — bulk incident review: submit many failures at once, dedupe per item |
+| `knowledge_embed` | v0.5 — backfill embeddings for KB entries (needs `embeddingEndpoint`); enables semantic search |
 
 ## Storage & auditability
 
@@ -46,7 +48,8 @@ dsh plugin --profile <profile> add dsh-memory-setup
 - v0.2 ✅: incident review with dedupe (`memory_review`), lesson/convention expiry + changelog cap (auto-pruned on save), `memory.json.bak` backup on every save, Markdown export (`memory_export`)
 - v0.3 ✅: personal knowledge base (`knowledge_*`, keyword retrieval, title-merge dedupe); dynamic memory injection via a live `systemPrompt.context()` section — refreshed at boot (from the workspace path) and after every memory save (throttled 30s), with static guidance as fallback
 - v0.4 ✅: **BM25 retrieval** for the knowledge base (title ×3 / tags ×2 / content ×1, IDF-scaled — no embeddings, no deps), memory diff export (`memory_diff` vs backup), self-review reminder in the injected guidance
-- v0.5: embeddings-based retrieval (optional provider), lesson auto-detection (pending a tool-call event API)
+- v0.5 ✅: **optional embeddings provider** (OpenAI-compatible endpoint; `knowledge_embed` backfill + cosine retrieval, BM25 fallback), **bulk incident review** (`memory_review_session`), own-tool fs failure tracking surfaced into the injected context
+- v0.6: lesson auto-detection (pending a tool-call event API), memory snapshots/restore
 
 ## Security
 

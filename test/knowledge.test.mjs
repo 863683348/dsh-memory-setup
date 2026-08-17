@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   emptyKnowledge, isValidKnowledge, kbAdd, kbSearch, kbList, kbRemove, kbHit, kbSummary, renderKB, kbSearchBM25,
+  cosineSimilarity, embeddingSearch,
 } from "../lib/knowledge.js";
 
 test("emptyKnowledge is valid", () => {
@@ -60,4 +61,21 @@ test("kbSearchBM25 ranks title matches above content-only matches (v0.4)", () =>
 test("kbSearchBM25 empty query returns nothing", () => {
   const k = kbAdd(emptyKnowledge(), { title: "x", content: "y" }).kb;
   assert.equal(kbSearchBM25(k, "").length, 0);
+});
+
+test("cosineSimilarity: identical ~1, orthogonal ~0 (v0.5)", () => {
+  assert.ok(cosineSimilarity([1, 2, 3], [1, 2, 3]) > 0.99);
+  assert.ok(Math.abs(cosineSimilarity([1, 0], [0, 1])) < 0.001);
+  assert.equal(cosineSimilarity([1, 0], [1]), 0); // length mismatch
+});
+
+test("embeddingSearch ranks by cosine (v0.5)", () => {
+  const k1 = kbAdd(emptyKnowledge(), { title: "docker", content: "containers" }).kb;
+  k1.entries[0].embedding = [1, 0, 0];
+  const k2 = kbAdd(k1, { title: "pnpm", content: "node" }).kb;
+  k2.entries[1].embedding = [0, 1, 0];
+  const noVec = kbAdd(k2, { title: "none", content: "x" }).kb; // no embedding
+  const results = embeddingSearch(noVec, [1, 0, 0], { limit: 5 });
+  assert.equal(results.length, 1);
+  assert.equal(results[0].title, "docker");
 });
