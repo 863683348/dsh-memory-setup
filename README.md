@@ -30,6 +30,14 @@ dsh plugin --profile <profile> add dsh-memory-setup
 | `memory_troubleshoot` | v0.6 — given an error, search past lessons + knowledge base for a known fix |
 | `memory_stats` | v0.7 — aggregate stats across memory, knowledge base and snapshots |
 | `memory_promote` | v0.7 — promote recurring lessons (hits ≥ threshold) into standing conventions; auto-runs on save |
+| `memory_import` / `memory_merge` | v0.8 — import memory from JSON (auto-migrate) / merge two memories (newer or both) |
+| `kb_export` / `kb_import` | v0.8 — knowledge base JSON round-trip |
+| `memory_focus` | v0.9 — relevance-based injection: only memory matching a topic is injected |
+| `memory_tier` | v1.0 — hot/warm/cold tiers (hot is injected, cold is archived) |
+| `memory_audit` | v1.0 — sha256 integrity check + changelog audit report |
+| `memory_import_claude` | v1.1 — import conventions from CLAUDE.md |
+| `memory_export_all` / `memory_import_all` | v1.2 — full backup bundle (memory + KB + snapshots) |
+| `memory_annotate` | v1.2 — owner/purpose annotations on entries |
 | `knowledge_embed` | v0.5 — backfill embeddings for KB entries (needs `embeddingEndpoint`); enables semantic search |
 
 ## Storage & auditability
@@ -64,7 +72,12 @@ dsh plugin --profile <profile> add dsh-memory-setup
 - v0.5 ✅: **optional embeddings provider** (OpenAI-compatible endpoint; `knowledge_embed` backfill + cosine retrieval, BM25 fallback), **bulk incident review** (`memory_review_session`), own-tool fs failure tracking surfaced into the injected context
 - v0.6 ✅: **memory snapshots & restore** (`memory_snapshot` / `memory_list_snapshots` / `memory_restore`, capped, index-file based), **fault troubleshooting** (`memory_troubleshoot` — lessons + knowledge lookup), troubleshoot reminder in guidance
 - v0.7 ✅: **KB included in snapshots** (snapshot/restore both memory + knowledge), **lesson auto-promotion** (recurring lessons with hits ≥ threshold become standing conventions, auto-run on save — the memory literally learns from repeated mistakes), **memory stats** (`memory_stats`)
-- v0.8: lesson auto-detection (pending a tool-call event API), web stats view, import/export round-trip
+- v0.8 ✅: schema v2 migration (auto on load), **memory import/merge** (`memory_import`/`memory_merge`, newer/both conflicts), **knowledge base JSON round-trip** (`kb_export`/`kb_import`)
+- v0.9 ✅: **lesson health evaluation** (failing/resolved/active — auto on save, ⚠️ markers in render), **relevance-focused injection** (`memory_focus`)
+- v1.0 ✅: **tiers** (hot/warm/cold), **integrity audit** (`memory_audit`, sha256), privacy redaction in exports (`sensitiveKeys`)
+- v1.1 ✅: **optimistic locking** (revision-based CAS — multi-session/multi-agent safe), **CLAUDE.md import** (`memory_import_claude`)
+- v1.2 ✅: **full backup bundle** (`memory_export_all`/`memory_import_all` — memory + KB + snapshots), **annotations** (`memory_annotate`, owner/purpose) — team-ready
+- v1.3+: lesson auto-detection (pending a tool-call event API), web stats view
 
 ## Security
 

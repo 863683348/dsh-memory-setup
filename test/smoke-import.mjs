@@ -14,7 +14,7 @@ console.log("name=" + name);
 console.log("inject=" + JSON.stringify(inject));
 console.log("tools=" + tools.map((t) => t.name).join(","));
 console.log("contexts=" + contexts.map((c) => c.name).join(","));
-const want = ["memory_setup", "memory_status", "memory_update", "memory_project", "memory_lesson", "memory_review", "memory_export", "memory_diff", "memory_review_session", "memory_snapshot", "memory_list_snapshots", "memory_restore", "memory_troubleshoot", "memory_stats", "memory_promote", "knowledge_add", "knowledge_search", "knowledge_list", "knowledge_remove", "knowledge_embed"];
+const want = ["memory_setup", "memory_status", "memory_update", "memory_project", "memory_lesson", "memory_review", "memory_export", "memory_diff", "memory_review_session", "memory_snapshot", "memory_list_snapshots", "memory_restore", "memory_troubleshoot", "memory_stats", "memory_promote", "memory_import", "memory_merge", "memory_focus", "memory_tier", "memory_audit", "memory_import_claude", "memory_export_all", "memory_import_all", "memory_annotate", "knowledge_add", "knowledge_search", "knowledge_list", "knowledge_remove", "knowledge_embed", "kb_export", "kb_import"];
 for (const w of want) if (!tools.some((t) => t.name === w)) throw new Error("missing " + w);
 if (!contexts.some((c) => c.name === "memory:content")) throw new Error("missing memory context");
 console.log("SMOKE OK");

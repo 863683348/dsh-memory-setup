@@ -5,6 +5,8 @@ import {
   addLesson, renderMemory, memorySummary, similarity, pruneMemory,
   applyReview, applyReviews, exportMarkdown, diffMemory, renderDiff,
   findLessonFix, snapshotId, pruneSnapshots, promoteLessons, computeStats, renderStats,
+  migrateMemory, mergeMemories, memoryFromJSON, updateLessonHealth, selectRelevant,
+  setTier, redactDoc, auditReport, parseClaudeMd, annotateEntry, buildBundle, parseBundle,
 } from "../lib/memory.js";
 
 test("emptyMemory is valid and renders empty", () => {
@@ -157,6 +159,98 @@ test("promoteLessons respects hit threshold (v0.7)", () => {
   const { doc } = applyReview(emptyMemory(), { error: "rare failure", fix: "rare fix" });
   const { promoted } = promoteLessons(doc, { hitThreshold: 3 });
   assert.equal(promoted.length, 0);
+});
+
+test("migrateMemory normalizes v1 docs to schema v2 (v0.8)", () => {
+  const old = { version: 1, preferences: { language: "Go" }, projectConventions: [{ id: "c1", detail: "x" }], workflows: "not-an-array", lessons: null, updatedAt: null };
+  const m = migrateMemory(old);
+  assert.equal(m.schemaVersion, 2);
+  assert.ok(Array.isArray(m.workflows));
+  assert.ok(Array.isArray(m.lessons));
+  assert.equal(m.preferences.language, "Go");
+});
+
+test("mergeMemories unions entries and picks newer preferences (v0.8)", () => {
+  const a = applySetup(emptyMemory(), { language: "Go", conventions: ["use pnpm"] }).doc;
+  const b = applySetup(emptyMemory(), { language: "Rust", conventions: ["use cargo"] }).doc;
+  b.updatedAt = new Date(Date.now() + 10000).toISOString();
+  const m = mergeMemories(a, b, { conflict: "newer" });
+  assert.equal(m.preferences.language, "Rust");
+  assert.equal(m.projectConventions.length, 2);
+  const both = mergeMemories(a, b, { conflict: "both" });
+  assert.equal(both.projectConventions.length, 2);
+});
+
+test("memoryFromJSON validates and migrates (v0.8)", () => {
+  const m = memoryFromJSON(JSON.stringify({ version: 1, preferences: { language: "JS" } }));
+  assert.equal(m.preferences.language, "JS");
+  assert.throws(() => memoryFromJSON("not json"), /invalid JSON/);
+  assert.throws(() => memoryFromJSON(JSON.stringify({ foo: 1 })), /valid memory/);
+});
+
+test("updateLessonHealth marks failing and resolved (v0.9)", () => {
+  const { doc } = applyReviews(emptyMemory(), [{ error: "build fails on windows", fix: "fix it" }]);
+  let d = applyReview(doc, { error: "build fails on windows", fix: "fix it" }).doc;
+  d = applyReview(d, { error: "build fails on windows", fix: "fix it" }).doc; // hits=3, lastSeen now
+  const now = Date.now();
+  const h = updateLessonHealth(d, { now });
+  assert.equal(h.lessons[0].health, "failing");
+  const old = applyReviews(emptyMemory(), [{ error: "old bug", fix: "fixed long ago" }]).doc;
+  old.lessons[0].hits = 3;
+  old.lessons[0].lastSeenAt = new Date(now - 60 * 86400000).toISOString();
+  const r = updateLessonHealth(old, { now });
+  assert.equal(r.lessons[0].health, "resolved");
+});
+
+test("selectRelevant picks matching conventions/lessons (v0.9)", () => {
+  const { doc } = applySetup(emptyMemory(), { conventions: ["use pnpm for installs", "tests in test/"] });
+  const rel = selectRelevant(doc, "pnpm install");
+  assert.ok(rel.conventions.some((c) => c.detail.includes("pnpm")));
+});
+
+test("setTier updates entry tier (v1.0)", () => {
+  const { doc } = applyReviews(emptyMemory(), [{ error: "x fails", fix: "y" }]);
+  const next = setTier(doc, "lesson", doc.lessons[0].id, "cold");
+  assert.equal(next.lessons[0].tier, "cold");
+  assert.throws(() => setTier(doc, "lesson", "nope", "hot"), /not found/);
+});
+
+test("redactDoc hides sensitive preference keys (v1.0)", () => {
+  const { doc } = applySetup(emptyMemory(), { language: "Go", notes: "apiKey=SECRET" });
+  const r = redactDoc(doc, ["notes"]);
+  assert.equal(r.preferences.notes, "[redacted]");
+  assert.equal(r.preferences.language, "Go");
+});
+
+test("auditReport reports integrity match/mismatch (v1.0)", () => {
+  const { doc } = applySetup(emptyMemory(), { language: "Go" });
+  const ok = auditReport(doc, "abc123", "abc123");
+  assert.ok(ok.includes("OK"));
+  const bad = auditReport(doc, "abc", "def");
+  assert.ok(bad.includes("MISMATCH"));
+});
+
+test("parseClaudeMd extracts conventions (v1.1)", () => {
+  const convs = parseClaudeMd("# Project\n## Rules\n- always run pnpm install first\n- never commit secrets\n# Other\nshort");
+  assert.equal(convs.length, 2);
+  assert.ok(convs[0].detail.includes("pnpm install"));
+});
+
+test("annotateEntry adds owner/purpose (v1.2)", () => {
+  const { doc } = applyReviews(emptyMemory(), [{ error: "x", fix: "y" }]);
+  const next = annotateEntry(doc, "lesson", doc.lessons[0].id, { owner: "alice", purpose: "ci" });
+  assert.equal(next.lessons[0].owner, "alice");
+  assert.equal(next.lessons[0].purpose, "ci");
+});
+
+test("buildBundle and parseBundle round-trip (v1.2)", () => {
+  const { doc } = applySetup(emptyMemory(), { language: "Go" });
+  const kb = { version: 1, entries: [{ id: "k1", title: "t", content: "c", tags: [], hits: 0 }] };
+  const bundle = buildBundle(doc, kb, [{ id: "s1" }]);
+  const parsed = parseBundle(JSON.stringify(bundle));
+  assert.equal(parsed.memory.preferences.language, "Go");
+  assert.equal(parsed.knowledge.entries.length, 1);
+  assert.throws(() => parseBundle(JSON.stringify({ foo: 1 })), /not a valid bundle/);
 });
 
 test("computeStats aggregates memory, knowledge and snapshots (v0.7)", () => {
