@@ -28,6 +28,8 @@ dsh plugin --profile <profile> add dsh-memory-setup
 | `memory_review_session` | v0.5 — bulk incident review: submit many failures at once, dedupe per item |
 | `memory_snapshot` / `memory_list_snapshots` / `memory_restore` | v0.6 — snapshot the memory (keeps N), list, and restore with auto-backup of the current state |
 | `memory_troubleshoot` | v0.6 — given an error, search past lessons + knowledge base for a known fix |
+| `memory_stats` | v0.7 — aggregate stats across memory, knowledge base and snapshots |
+| `memory_promote` | v0.7 — promote recurring lessons (hits ≥ threshold) into standing conventions; auto-runs on save |
 | `knowledge_embed` | v0.5 — backfill embeddings for KB entries (needs `embeddingEndpoint`); enables semantic search |
 
 ## Storage & auditability
@@ -61,7 +63,8 @@ dsh plugin --profile <profile> add dsh-memory-setup
 - v0.4 ✅: **BM25 retrieval** for the knowledge base (title ×3 / tags ×2 / content ×1, IDF-scaled — no embeddings, no deps), memory diff export (`memory_diff` vs backup), self-review reminder in the injected guidance
 - v0.5 ✅: **optional embeddings provider** (OpenAI-compatible endpoint; `knowledge_embed` backfill + cosine retrieval, BM25 fallback), **bulk incident review** (`memory_review_session`), own-tool fs failure tracking surfaced into the injected context
 - v0.6 ✅: **memory snapshots & restore** (`memory_snapshot` / `memory_list_snapshots` / `memory_restore`, capped, index-file based), **fault troubleshooting** (`memory_troubleshoot` — lessons + knowledge lookup), troubleshoot reminder in guidance
-- v0.7: lesson auto-detection (pending a tool-call event API), KB snapshots, memory stats page
+- v0.7 ✅: **KB included in snapshots** (snapshot/restore both memory + knowledge), **lesson auto-promotion** (recurring lessons with hits ≥ threshold become standing conventions, auto-run on save — the memory literally learns from repeated mistakes), **memory stats** (`memory_stats`)
+- v0.8: lesson auto-detection (pending a tool-call event API), web stats view, import/export round-trip
 
 ## Security
 

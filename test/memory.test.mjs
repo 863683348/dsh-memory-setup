@@ -4,7 +4,7 @@ import {
   emptyMemory, isValidMemory, applySetup, updateEntry, removeEntry,
   addLesson, renderMemory, memorySummary, similarity, pruneMemory,
   applyReview, applyReviews, exportMarkdown, diffMemory, renderDiff,
-  findLessonFix, snapshotId, pruneSnapshots,
+  findLessonFix, snapshotId, pruneSnapshots, promoteLessons, computeStats, renderStats,
 } from "../lib/memory.js";
 
 test("emptyMemory is valid and renders empty", () => {
@@ -137,6 +137,38 @@ test("snapshotId and pruneSnapshots (v0.6)", () => {
   assert.equal(pruned.length, 2);
   assert.equal(pruned[0].id, "b");
   assert.equal(pruned[1].id, "c");
+});
+
+test("promoteLessons turns recurring lessons into conventions (v0.7)", () => {
+  const { doc: withLesson } = applyReviews(emptyMemory(), [{ error: "port already in use", fix: "use port 3001" }]);
+  // bump hits to 3 by re-applying similar reviews
+  let d = withLesson;
+  d = applyReview(d, { error: "port already in use again", fix: "use port 3001" }).doc;
+  d = applyReview(d, { error: "port 3000 already in use", fix: "use port 3001" }).doc;
+  const { doc: promotedDoc, promoted } = promoteLessons(d, { hitThreshold: 3 });
+  assert.equal(promoted.length, 1);
+  assert.ok(promotedDoc.projectConventions.some((c) => c.type === "learned" && c.detail.includes("use port 3001")));
+  // dedupe: promoting again adds nothing
+  const again = promoteLessons(promotedDoc, { hitThreshold: 3 });
+  assert.equal(again.promoted.length, 0);
+});
+
+test("promoteLessons respects hit threshold (v0.7)", () => {
+  const { doc } = applyReview(emptyMemory(), { error: "rare failure", fix: "rare fix" });
+  const { promoted } = promoteLessons(doc, { hitThreshold: 3 });
+  assert.equal(promoted.length, 0);
+});
+
+test("computeStats aggregates memory, knowledge and snapshots (v0.7)", () => {
+  const { doc } = applySetup(emptyMemory(), { language: "Go", conventions: ["a"] });
+  const kb = { version: 1, entries: [{ id: "k1", title: "x", content: "y", tags: [], hits: 2 }] };
+  const stats = computeStats(doc, kb, [{ id: "s1" }]);
+  assert.equal(stats.preferences, 1);
+  assert.equal(stats.conventions, 1);
+  assert.equal(stats.knowledgeEntries, 1);
+  assert.equal(stats.knowledgeHits, 2);
+  assert.equal(stats.snapshots, 1);
+  assert.ok(renderStats(stats).includes("Memory stats"));
 });
 
 test("applyReviews batches incidents with dedupe (v0.5)", () => {
